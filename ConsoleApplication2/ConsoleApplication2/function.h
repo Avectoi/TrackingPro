@@ -1,9 +1,13 @@
 //------------------------------------
 // Created by Linghan 2016-09-29
+// Changed by Pei Zhang and Yuxuan Hao 2016-12-28
+// Changed by Linghan 2016-12-31
 //------------------------------------
 #ifndef __Functions__
 #define __Functions__
 
+#include <io.h>
+#include <vector>
 #include <cstdio>
 #include <cmath>
 #include <cstring>
@@ -49,13 +53,35 @@ extern double lastpu[];
 extern double w[][100];
 
 //--- function declarations ---
+/**
+@brief 根据路径得到文件
+@param[in] string path: 文件路径
+@param[in] string exd: 文件扩展名
+@param[in] vector<string>& files: 所有文件名集合
+*/
+void getFiles(string path, string exd, vector<string>& files);
+
+/**
+@brief 根据名称分析视频来自视角1还是视角2
+*/
+int getFileAngle(string filename);
+
+/**
+@brief 得到transform Mat
+*/
 Mat getTransformMat(Mat &src, Mat &dst, int tag);
+
+/**
+@brief 初始化, 手工标定球、守门员、1队队员、2队队员位置
+*/
 void initialization(Mat &frame);
+
+
 double kernelProfile(int x, int y, int centerx, int centery, double h);
 double gvalue(int x, int y, int centerx, int centery, double h);
 void showPlan(int imgIndex, Mat transMat, Mat &field);
-Mat ballCandidates(Mat img);
-void ballCorrect_mouse(int event, int x, int y, int type, void *param);
+void reSelect(Mat &frame, int imgIndex);
+void correct_mouse(int event, int x, int y, int type, void *param);
 
 #endif
 

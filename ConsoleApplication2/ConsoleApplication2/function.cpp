@@ -1,5 +1,7 @@
 //------------------------------------
 // Created by Linghan 2016-09-29
+// Changed by Pei Zhang and Yuxuan Hao 2016-12-28
+// Changed by Linghan 2016-12-31
 //------------------------------------
 
 #include "function.h"
@@ -24,7 +26,70 @@ double lastpu[200001];
 double w[100][100];
 
 //----------------------------------------------------------------
+/**
+@brief 根据路径得到文件
+@param[in] string path: 文件路径
+@param[in] string exd: 文件扩展名
+@param[in] vector<string>& files: 所有文件名集合
+*/
+void getFiles(string path, string exd, vector<string>& files){
+	//文件句柄
+	long   hFile = 0;
+	//文件信息
+	struct _finddata_t fileinfo;
+	string pathName, exdName;
 
+	if (0 != strcmp(exd.c_str(), ""))
+	{
+		exdName = "\\*." + exd;
+	}
+	else
+	{
+		exdName = "\\*";
+	}
+
+	if ((hFile = _findfirst(pathName.assign(path).append(exdName).c_str(), &fileinfo)) != -1)
+	{
+		do
+		{
+			//如果是文件夹中仍有文件夹,迭代之
+			//如果不是,加入列表
+			if ((fileinfo.attrib &  _A_SUBDIR))
+			{
+				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+					getFiles(pathName.assign(path).append("\\").append(fileinfo.name), exd, files);
+			}
+			else
+			{
+				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+					files.push_back(pathName.assign(path).append("\\").append(fileinfo.name));
+			}
+		} while (_findnext(hFile, &fileinfo) == 0);
+		_findclose(hFile);
+	}
+}
+
+//----------------------------------------------------------------
+/**
+@brief 根据名称分析视频来自视角1还是视角2
+*/
+int getFileAngle(string filename){
+	int len_of_file_name;
+	int len_of_find_spcial_sign;
+	len_of_file_name = filename.length();
+	len_of_find_spcial_sign = filename.find('-');
+	if (filename[len_of_find_spcial_sign + 1] - '0' == 1){
+		return 1;
+	}
+	else{
+		return 2;
+	}
+}
+
+//----------------------------------------------------------------
+/**
+@brief 选择transform Mat的src图上四个点
+*/
 void pickPointSrc(int event, int x, int y, int type, void *param) {
 
 	if (event == EVENT_LBUTTONDOWN && count<4) {
@@ -38,7 +103,9 @@ void pickPointSrc(int event, int x, int y, int type, void *param) {
 }
 
 //----------------------------------------------------------------
-
+/**
+@brief 选择transform Mat的des图上四个点
+*/
 void pickPointDst(int event, int x, int y, int type, void *param) {
 
 	if (event == EVENT_LBUTTONDOWN && count<4) {
@@ -52,7 +119,9 @@ void pickPointDst(int event, int x, int y, int type, void *param) {
 }
 
 //----------------------------------------------------------------
-
+/**
+@brief 得到transform Mat
+*/
 Mat getTransformMat(Mat &src, Mat &dst, int tag) {
 
 	/*count = 0;
@@ -126,7 +195,9 @@ Mat getTransformMat(Mat &src, Mat &dst, int tag) {
 }
 
 //-------------------------------------------------------------
-
+/**
+@brief 记录矩形
+*/
 void recordRect(int x1, int y1, int x2, int y2, int type) {
 	//rectangle(frame, cvPoint(x1,y1), cvPoint(x2,y2), cvScalar(0, 0, 255, 0));
 	players[0][totPlayers] = PlayerRec(y1, x1, y2, x2, type); // notice! swap x and y
@@ -134,7 +205,9 @@ void recordRect(int x1, int y1, int x2, int y2, int type) {
 }
 
 //----------------------------------------------------------------
-
+/**
+@brief 鼠标选定跟踪框位置
+*/
 void on_mouse(int event, int x, int y, int type, void *param) {
 
 	int& otype = *(int*)param;
@@ -169,15 +242,15 @@ void on_mouse(int event, int x, int y, int type, void *param) {
 }
 
 //----------------------------------------------------------------
-
+/**
+@brief 初始化, 手工标定球、守门员、1队队员、2队队员位置
+*/
 void initialization(Mat &frame) {
 
 	Mat tempimg;
 	int type;
 
-
 	totPlayers = 0;
-	
 
 	selectFlag = true; type = 3;
 	printf("Please select the position of ball\n");
@@ -235,7 +308,7 @@ void initialization(Mat &frame) {
 	}
 	destroyWindow("Team 2");
 	//imshow("src", frame);
-	printf("total targets: %d", totPlayers);
+	printf("total targets: %d\n", totPlayers);
 }
 
 //-------------------------------------------------------------
@@ -288,64 +361,14 @@ void showPlan(int imgIndex, Mat transMat, Mat &field) {
 
 //-------------------------------------------------------------
 
-Mat ballCandidates(Mat img) {
-	//-------------- Ground Map Construction --------------
-	cv::Mat hsvimg;
-	cv::cvtColor(img, hsvimg, CV_BGR2HSV);
-	//HSVhist(hsvimg);
-	cv::vector<cv::Mat> hsvplanes;
-	cv::split(hsvimg, hsvplanes);
-	//cv::imwrite("HSV.png",hsvimg);
+void reSelect(Mat &frame, int imgIndex){
 
-	double meanSaturation;
-	meanSaturation = cv::mean(hsvplanes[1])[0];
-	double maxValue;
-	cv::minMaxIdx(hsvplanes[2], NULL, &maxValue);
 
-	//cv::Mat ground = img.clone();
-	cv::Mat ground = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
-	for (int i = 0; i<img.rows; i++){
-		for (int j = 0; j<img.cols; j++) {
-			if (img.at<cv::Vec3b>(i, j)[1] > 0.95*img.at<cv::Vec3b>(i, j)[2] && // g > 0.95r
-				img.at<cv::Vec3b>(i, j)[2] > 0.95*img.at<cv::Vec3b>(i, j)[0] && // r > 0.95b
-				hsvimg.at<cv::Vec3b>(i, j)[1] > 0.8*meanSaturation && // s > 0.8meanS
-				hsvimg.at<cv::Vec3b>(i, j)[2] < 1.25*maxValue) { // v < 1.25maxV
-				ground.at<cv::Vec3b>(i, j)[0] = 255;
-				ground.at<cv::Vec3b>(i, j)[1] = 255;
-				ground.at<cv::Vec3b>(i, j)[2] = 255;
-			}
-		}
-	}
-	cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
-	cv::morphologyEx(ground, ground, CV_MOP_CLOSE, element);
-
-	cvtColor(ground, ground, CV_BGR2GRAY);
-	ground = 255 - ground;
-
-	//--------------- Contour Tracking -----------------
-	std::vector<std::vector<cv::Point>> contours;
-	std::vector<cv::Vec4i> hierarchy;
-	cv::Mat cont = ground.clone();
-	cv::findContours(cont, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-
-	cont = cv::Mat::zeros(img.rows, img.cols, CV_8UC3);
-	for (int i = 0; i<contours.size(); i++){
-		double area = cv::contourArea(contours[i]);
-		if (area < 2 || area > 30) continue; // remove people and noise
-
-		double peri = cv::arcLength(contours[i], true);
-		double factor = (peri*peri) / (4 * 3.1415926*area);
-		if (factor < 0.5 || factor > 2) continue; // circularity
-
-		cv::drawContours(cont, contours, i, cv::Scalar(255, 255, 255), CV_FILLED, 8);
-	}
-
-	return cont;
 }
 
 //-------------------------------------------------------------
 
-void ballCorrect_mouse(int event, int x, int y, int type, void *param) {
+void correct_mouse(int event, int x, int y, int type, void *param) {
 
 	int& index = *(int*)param;
 	switch (event) {
