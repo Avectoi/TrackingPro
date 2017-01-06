@@ -1,0 +1,24 @@
+drawRect(frame, , , , , 0);//1 //type 3为球 0为守门员 1为1队 2为2队
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);//7
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);//13
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);//18
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);
+drawRect(frame, , , , , 0);//24
